@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Expense Calculator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <canvas id="moneyScene" aria-hidden="true"></canvas>
+    <main class="app-shell">
+      <section class="topbar" aria-label="Expense overview">
+        <div>
+          <p class="eyebrow">Personal finance</p>
+          <h1>Expense Calculator</h1>
+        </div>
+        <div class="month-control">
+          <label for="monthFilter">Month</label>
+          <input id="monthFilter" type="month" />
+        </div>
+      </section>
+
+      <section class="summary-grid" aria-label="Summary">
+        <article class="summary-card">
+          <span>Total spent</span>
+          <strong id="totalSpent">₹0.00</strong>
+        </article>
+        <article class="summary-card">
+          <span>Budget left</span>
+          <strong id="budgetLeft">₹0.00</strong>
+        </article>
+        <article class="summary-card">
+          <span>Largest expense</span>
+          <strong id="largestExpense">₹0.00</strong>
+        </article>
+        <article class="summary-card">
+          <span>Daily average</span>
+          <strong id="dailyAverage">₹0.00</strong>
+        </article>
+      </section>
+
+      <section class="workspace">
+        <aside class="panel controls-panel" aria-label="Expense controls">
+          <form id="expenseForm" class="expense-form">
+            <input type="hidden" id="editingId" />
+            <div class="field-group">
+              <label for="description">Description</label>
+              <input id="description" type="text" placeholder="Groceries, rent, fuel..." required />
+            </div>
+
+            <div class="split-fields">
+              <div class="field-group">
+                <label for="amount">Amount</label>
+                <input id="amount" type="number" min="0.01" step="0.01" placeholder="₹ 0.00" required />
+              </div>
+              <div class="field-group">
+                <label for="date">Date</label>
+                <input id="date" type="date" required />
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label for="category">Category</label>
+              <select id="category" required>
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Housing">Housing</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Health">Health</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <button class="primary-button" type="submit" id="submitButton">Add expense</button>
+            <button class="ghost-button hidden" type="button" id="cancelEditButton">Cancel edit</button>
+          </form>
+
+          <section class="quick-calculator" aria-label="Quick calculator">
+            <div class="calculator-display">
+              <span id="calculatorExpression">0</span>
+              <strong id="calculatorResult">₹0.00</strong>
+            </div>
+            <div class="calculator-grid">
+              <button type="button" data-calc-action="clear">AC</button>
+              <button type="button" data-calc-action="backspace">⌫</button>
+              <button type="button" data-calc-value="%">%</button>
+              <button type="button" data-calc-value="/">÷</button>
+              <button type="button" data-calc-value="7">7</button>
+              <button type="button" data-calc-value="8">8</button>
+              <button type="button" data-calc-value="9">9</button>
+              <button type="button" data-calc-value="*">×</button>
+              <button type="button" data-calc-value="4">4</button>
+              <button type="button" data-calc-value="5">5</button>
+              <button type="button" data-calc-value="6">6</button>
+              <button type="button" data-calc-value="-">−</button>
+              <button type="button" data-calc-value="1">1</button>
+              <button type="button" data-calc-value="2">2</button>
+              <button type="button" data-calc-value="3">3</button>
+              <button type="button" data-calc-value="+">+</button>
+              <button type="button" data-calc-value="0">0</button>
+              <button type="button" data-calc-value=".">.</button>
+              <button type="button" class="calculator-equals" data-calc-action="equals">=</button>
+            </div>
+            <button class="ghost-button" type="button" id="useCalculatorResult">Use result as amount</button>
+          </section>
+
+          <div class="budget-box">
+            <div class="field-group">
+              <label for="budget">Monthly budget</label>
+              <input id="budget" type="number" min="0" step="1" placeholder="Set budget in ₹" />
+            </div>
+            <div class="budget-meter" aria-label="Budget used">
+              <span id="budgetProgress"></span>
+            </div>
+            <p id="budgetStatus">Set a budget to track your month.</p>
+          </div>
+
+          <div class="filter-box">
+            <div class="field-group">
+              <label for="categoryFilter">Filter category</label>
+              <select id="categoryFilter">
+                <option value="All">All categories</option>
+                <option value="Food">Food</option>
+                <option value="Transport">Transport</option>
+                <option value="Housing">Housing</option>
+                <option value="Utilities">Utilities</option>
+                <option value="Health">Health</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="toolbar">
+              <button class="icon-button" id="exportButton" type="button" title="Export CSV" aria-label="Export CSV">
+                <span aria-hidden="true">↓</span>
+              </button>
+              <button class="icon-button danger" id="clearButton" type="button" title="Clear all" aria-label="Clear all">
+                <span aria-hidden="true">×</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <section class="content-area">
+          <section class="panel chart-panel" aria-label="Category spending chart">
+            <div class="section-heading">
+              <h2>Category breakdown</h2>
+              <span id="expenseCount">0 expenses</span>
+            </div>
+            <div id="chart" class="chart"></div>
+          </section>
+
+          <section class="panel table-panel" aria-label="Expense list">
+            <div class="section-heading">
+              <h2>Expenses</h2>
+              <input id="searchInput" type="search" placeholder="Search expenses" />
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Date</th>
+                    <th class="amount-cell">Amount</th>
+                    <th class="action-cell">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="expenseRows"></tbody>
+              </table>
+              <p id="emptyState" class="empty-state">No expenses yet. Add your first one.</p>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="money-scene.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
