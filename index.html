@@ -8,15 +8,68 @@
   </head>
   <body>
     <canvas id="moneyScene" aria-hidden="true"></canvas>
-    <main class="app-shell">
+    <section id="authScreen" class="auth-screen" aria-label="Sign in">
+      <div class="auth-card">
+        <p class="eyebrow">Secure access</p>
+        <h1>Money Manager</h1>
+        <p class="auth-copy">Sign in to manage your expenses.</p>
+
+        <div class="auth-tabs" role="tablist" aria-label="Account mode">
+          <button id="signInTab" class="active" type="button">Sign in</button>
+          <button id="signUpTab" type="button">Sign up</button>
+        </div>
+
+        <div class="login-type-toggle" role="tablist" aria-label="Login method">
+          <button id="phoneTypeBtn" class="active" type="button">Mobile Number</button>
+          <button id="emailTypeBtn" type="button">Email Address</button>
+        </div>
+
+        <form id="authForm" class="auth-form">
+          <div id="nameField" class="field-group hidden">
+            <label for="authName">Full name</label>
+            <input id="authName" type="text" placeholder="Your name" autocomplete="name" />
+          </div>
+
+          <div id="phoneField" class="field-group">
+            <label for="authPhone">Mobile number</label>
+            <input id="authPhone" type="tel" placeholder="10 digit Indian mobile number" inputmode="numeric" autocomplete="tel" required />
+          </div>
+
+          <div id="emailField" class="field-group hidden">
+            <label for="authEmail">Email address</label>
+            <input id="authEmail" type="email" placeholder="name@example.com" autocomplete="email" />
+          </div>
+
+          <div class="field-group">
+            <label for="authPassword">Password</label>
+            <input id="authPassword" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+          </div>
+
+          <div id="confirmPasswordField" class="field-group hidden">
+            <label for="authConfirmPassword">Confirm password</label>
+            <input id="authConfirmPassword" type="password" placeholder="Re-enter your password" autocomplete="new-password" />
+          </div>
+
+          <button id="authSubmit" class="primary-button" type="submit">Sign in</button>
+        </form>
+
+        <p id="authMessage" class="auth-message" role="status"></p>
+      </div>
+    </section>
+
+    <main class="app-shell locked">
       <section class="topbar" aria-label="Expense overview">
         <div>
           <p class="eyebrow">Personal finance</p>
           <h1>Expense Calculator</h1>
+          <p id="userGreeting" class="user-greeting"></p>
         </div>
-        <div class="month-control">
-          <label for="monthFilter">Month</label>
-          <input id="monthFilter" type="month" />
+        <div class="topbar-actions">
+          <div class="month-control">
+            <label for="monthFilter">Month</label>
+            <input id="monthFilter" type="month" />
+          </div>
+          <button id="logoutButton" class="ghost-button logout-button" type="button">Logout</button>
         </div>
       </section>
 

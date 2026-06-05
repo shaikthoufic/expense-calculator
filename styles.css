@@ -65,6 +65,120 @@ select {
   padding: 28px 0;
 }
 
+.app-shell.locked {
+  display: none;
+}
+
+.auth-screen {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: min(440px, 100%);
+  border: 1px solid rgba(20, 134, 79, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(228, 255, 235, 0.88)),
+    rgba(255, 255, 255, 0.9);
+  box-shadow: 0 28px 70px rgba(8, 77, 46, 0.24);
+  padding: 24px;
+  backdrop-filter: blur(20px);
+}
+
+.auth-card h1 {
+  font-size: clamp(2rem, 8vw, 3.4rem);
+}
+
+.auth-copy,
+.user-greeting {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.auth-copy {
+  margin: 12px 0 18px;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.auth-tabs button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.auth-tabs button.active {
+  background: linear-gradient(135deg, var(--green), var(--yellow));
+  color: #fff;
+}
+
+.login-type-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.login-type-toggle button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 0.88rem;
+  transition: all 0.2s ease;
+}
+
+.login-type-toggle button:hover {
+  color: var(--ink);
+}
+
+.login-type-toggle button.active {
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 4px 12px rgba(12, 75, 46, 0.08);
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+
+.auth-message {
+  min-height: 22px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.auth-message[data-tone="success"] {
+  color: var(--green);
+}
+
+.auth-message[data-tone="error"] {
+  color: var(--red);
+}
+
 .topbar {
   display: flex;
   align-items: end;
@@ -110,9 +224,19 @@ h2 {
 }
 
 .month-control,
+.topbar-actions,
 .field-group {
   display: grid;
   gap: 7px;
+}
+
+.topbar-actions {
+  grid-template-columns: minmax(160px, 1fr) auto;
+  align-items: end;
+}
+
+.logout-button {
+  padding: 0 14px;
 }
 
 label {

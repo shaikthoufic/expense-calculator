@@ -14,8 +14,10 @@ const colors = {
   Other: "#64707d",
 };
 
-const storageKey = "expense-calculator-items";
-const budgetKey = "expense-calculator-budget";
+const usersKey = "expense-calculator-users";
+const sessionKey = "expense-calculator-session";
+const legacyStorageKey = "expense-calculator-items";
+const legacyBudgetKey = "expense-calculator-budget";
 
 const form = document.querySelector("#expenseForm");
 const editingId = document.querySelector("#editingId");
@@ -36,10 +38,175 @@ const calculatorExpression = document.querySelector("#calculatorExpression");
 const calculatorResult = document.querySelector("#calculatorResult");
 const calculatorButtons = document.querySelectorAll("[data-calc-value], [data-calc-action]");
 const useCalculatorResult = document.querySelector("#useCalculatorResult");
+const authScreen = document.querySelector("#authScreen");
+const appShell = document.querySelector(".app-shell");
+const authForm = document.querySelector("#authForm");
+const signInTab = document.querySelector("#signInTab");
+const signUpTab = document.querySelector("#signUpTab");
+const nameField = document.querySelector("#nameField");
+const authName = document.querySelector("#authName");
+const authPhone = document.querySelector("#authPhone");
+const authPassword = document.querySelector("#authPassword");
+const confirmPasswordField = document.querySelector("#confirmPasswordField");
+const authConfirmPassword = document.querySelector("#authConfirmPassword");
+const authSubmit = document.querySelector("#authSubmit");
+const authMessage = document.querySelector("#authMessage");
+const logoutButton = document.querySelector("#logoutButton");
+const userGreeting = document.querySelector("#userGreeting");
+const phoneTypeBtn = document.querySelector("#phoneTypeBtn");
+const emailTypeBtn = document.querySelector("#emailTypeBtn");
+const phoneField = document.querySelector("#phoneField");
+const emailField = document.querySelector("#emailField");
+const authEmail = document.querySelector("#authEmail");
 
-let expenses = JSON.parse(localStorage.getItem(storageKey) || "[]");
+let users = JSON.parse(localStorage.getItem(usersKey) || "{}");
+let currentUser = localStorage.getItem(sessionKey) || "";
+let authMode = "signin";
+let loginType = "phone";
+let expenses = [];
 let calculatorValue = "";
 let calculatorTotal = 0;
+
+function userStorageKey(phone, type) {
+  return `expense-calculator-${phone}-${type}`;
+}
+
+function expenseStorageKey() {
+  return userStorageKey(currentUser, "items");
+}
+
+function budgetStorageKey() {
+  return userStorageKey(currentUser, "budget");
+}
+
+function saveUsers() {
+  localStorage.setItem(usersKey, JSON.stringify(users));
+}
+
+function normalizePhone(value) {
+  return value.replace(/\D/g, "").slice(-10);
+}
+
+function isValidPhone(phone) {
+  return /^[6-9]\d{9}$/.test(phone);
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPassword(password) {
+  return password.length >= 6;
+}
+
+async function hashPassword(password) {
+  if (!crypto.subtle) {
+    return `plain:${password}`;
+  }
+
+  const encoded = new TextEncoder().encode(password);
+  const digest = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function setAuthMessage(message, tone = "info") {
+  authMessage.textContent = message;
+  authMessage.dataset.tone = tone;
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  signInTab.classList.toggle("active", mode === "signin");
+  signUpTab.classList.toggle("active", mode === "signup");
+  nameField.classList.toggle("hidden", mode !== "signup");
+  confirmPasswordField.classList.toggle("hidden", mode !== "signup");
+  authName.required = mode === "signup";
+  authConfirmPassword.required = mode === "signup";
+  authPassword.autocomplete = mode === "signin" ? "current-password" : "new-password";
+  authSubmit.textContent = mode === "signin" ? "Sign in" : "Create account";
+  authForm.reset();
+  updateAuthMessage();
+}
+
+function updateAuthMessage() {
+  if (authMode === "signin") {
+    setAuthMessage(
+      loginType === "phone"
+        ? "Enter your mobile number and password."
+        : "Enter your email address and password."
+    );
+  } else {
+    setAuthMessage(
+      loginType === "phone"
+        ? "Create your account with a mobile number and password."
+        : "Create your account with an email address and password."
+    );
+  }
+}
+
+function setLoginType(type) {
+  loginType = type;
+  phoneTypeBtn.classList.toggle("active", type === "phone");
+  emailTypeBtn.classList.toggle("active", type === "email");
+  phoneField.classList.toggle("hidden", type !== "phone");
+  emailField.classList.toggle("hidden", type !== "email");
+  
+  authPhone.required = type === "phone";
+  authEmail.required = type === "email";
+  
+  if (type === "phone") {
+    authPhone.focus();
+  } else {
+    authEmail.focus();
+  }
+  
+  updateAuthMessage();
+}
+
+function loadUserData() {
+  expenses = JSON.parse(localStorage.getItem(expenseStorageKey()) || "[]");
+  budget.value = localStorage.getItem(budgetStorageKey()) || "";
+}
+
+function migrateLegacyData(phone) {
+  const hasUserExpenses = localStorage.getItem(userStorageKey(phone, "items"));
+  const legacyExpenses = localStorage.getItem(legacyStorageKey);
+  const legacyBudget = localStorage.getItem(legacyBudgetKey);
+
+  if (!hasUserExpenses && legacyExpenses) {
+    localStorage.setItem(userStorageKey(phone, "items"), legacyExpenses);
+  }
+
+  if (!localStorage.getItem(userStorageKey(phone, "budget")) && legacyBudget) {
+    localStorage.setItem(userStorageKey(phone, "budget"), legacyBudget);
+  }
+}
+
+function showApp() {
+  const user = users[currentUser];
+  authScreen.classList.add("hidden");
+  appShell.classList.remove("locked");
+  userGreeting.textContent = user ? `Welcome, ${user.name}` : "";
+  loadUserData();
+  resetForm();
+  renderCalculator();
+  render();
+}
+
+function showAuth() {
+  appShell.classList.add("locked");
+  authScreen.classList.remove("hidden");
+  currentUser = "";
+  expenses = [];
+  localStorage.removeItem(sessionKey);
+  setAuthMode("signin");
+}
+
+function completeLogin(phone) {
+  currentUser = phone;
+  localStorage.setItem(sessionKey, phone);
+  showApp();
+}
 
 function today() {
   const now = new Date();
@@ -52,7 +219,7 @@ function currentMonth() {
 }
 
 function saveExpenses() {
-  localStorage.setItem(storageKey, JSON.stringify(expenses));
+  localStorage.setItem(expenseStorageKey(), JSON.stringify(expenses));
 }
 
 function createId() {
@@ -284,7 +451,7 @@ expenseRows.addEventListener("click", (event) => {
 cancelEditButton.addEventListener("click", resetForm);
 
 budget.addEventListener("input", () => {
-  localStorage.setItem(budgetKey, budget.value);
+  localStorage.setItem(budgetStorageKey(), budget.value);
   render();
 });
 
@@ -322,6 +489,116 @@ useCalculatorResult.addEventListener("click", () => {
   amount.focus();
 });
 
+signInTab.addEventListener("click", () => setAuthMode("signin"));
+signUpTab.addEventListener("click", () => setAuthMode("signup"));
+phoneTypeBtn.addEventListener("click", () => setLoginType("phone"));
+emailTypeBtn.addEventListener("click", () => setLoginType("email"));
+
+authForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const name = authName.value.trim() || "User";
+  const password = authPassword.value;
+  const confirmPassword = authConfirmPassword.value;
+
+  let identifier = "";
+  if (loginType === "phone") {
+    const phone = normalizePhone(authPhone.value);
+    if (!isValidPhone(phone)) {
+      setAuthMessage("Please enter a valid 10 digit Indian mobile number.", "error");
+      authPhone.focus();
+      return;
+    }
+    identifier = phone;
+  } else {
+    const email = authEmail.value.trim().toLowerCase();
+    if (!isValidEmail(email)) {
+      setAuthMessage("Please enter a valid email address.", "error");
+      authEmail.focus();
+      return;
+    }
+    identifier = email;
+  }
+
+  if (!isValidPassword(password)) {
+    setAuthMessage("Password must be at least 6 characters.", "error");
+    authPassword.focus();
+    return;
+  }
+
+  if (authMode === "signin") {
+    const user = users[identifier];
+
+    if (!user) {
+      setAuthMessage(
+        loginType === "phone"
+          ? "This number is not registered. Please sign up first."
+          : "This email is not registered. Please sign up first.",
+        "error"
+      );
+      return;
+    }
+
+    if (!user.passwordHash) {
+      setAuthMessage("This account needs a password. Please sign up again to set it.", "error");
+      return;
+    }
+
+    if ((await hashPassword(password)) !== user.passwordHash) {
+      setAuthMessage(
+        loginType === "phone"
+          ? "Incorrect mobile number or password."
+          : "Incorrect email address or password.",
+        "error"
+      );
+      authPassword.focus();
+      return;
+    }
+
+    completeLogin(identifier);
+    return;
+  }
+
+  if (authMode === "signup" && users[identifier]?.passwordHash) {
+    setAuthMessage(
+      loginType === "phone"
+        ? "This number already has an account. Please sign in."
+        : "This email already has an account. Please sign in.",
+      "error"
+    );
+    return;
+  }
+
+  if (name.length < 2) {
+    setAuthMessage("Please enter your full name to create the account.", "error");
+    authName.focus();
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setAuthMessage("Passwords do not match.", "error");
+    authConfirmPassword.focus();
+    return;
+  }
+
+  users[identifier] = {
+    name,
+    phone: loginType === "phone" ? identifier : "",
+    email: loginType === "email" ? identifier : "",
+    passwordHash: await hashPassword(password),
+    createdAt: users[identifier]?.createdAt || new Date().toISOString(),
+  };
+  saveUsers();
+  migrateLegacyData(identifier);
+
+  completeLogin(identifier);
+});
+
+logoutButton.addEventListener("click", () => {
+  showAuth();
+  setAuthMessage("You have logged out.");
+});
+
 document.querySelector("#clearButton").addEventListener("click", () => {
   if (!expenses.length) return;
   const confirmed = confirm("Clear all saved expenses?");
@@ -355,7 +632,9 @@ document.querySelector("#exportButton").addEventListener("click", () => {
 
 monthFilter.value = currentMonth();
 date.value = today();
-budget.value = localStorage.getItem(budgetKey) || "";
 
-renderCalculator();
-render();
+if (currentUser && users[currentUser]?.passwordHash) {
+  showApp();
+} else {
+  showAuth();
+}
